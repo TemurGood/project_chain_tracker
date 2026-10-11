@@ -1,0 +1,55 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db" // Будет переопределено LibSQL адаптером во время runtime
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+model Store {
+  id              String   @id @default(cuid())
+  name            String
+  address         String?
+  allocatedBudget Float    @default(0.0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users           User[]
+  transactions    Transaction[]
+  budgetRequests  BudgetRequest[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      String   @default("STORE_MANAGER") // ADMIN или STORE_MANAGER
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  type        String   // INCOME или EXPENSE
+  category    String   // SALES, RENT, SALARY, SUPPLIES, MARKETING, OTHER
+  amount      Float
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+model BudgetRequest {
+  id              String   @id @default(cuid())
+  storeId         String
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  requestedAmount Float
+  reason          String
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
